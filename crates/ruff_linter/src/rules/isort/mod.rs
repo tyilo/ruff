@@ -108,7 +108,14 @@ pub(crate) fn format_imports(
         output.push_str(block_output.as_str());
     }
 
-    let lines_after_imports = settings.lines_after_imports;
+    let lines_after_imports = if source_type.is_stub() {
+        // Limit the number of lines after imports in stub files to 1 to be compatible with the formatter similar to `isort`
+        // when using the profile `black`.
+        settings.lines_after_imports.min(1)
+    } else {
+        settings.lines_after_imports
+    };
+
     match trailer {
         None => {}
         Some(Trailer::Sibling) => {
@@ -978,6 +985,7 @@ mod tests {
     }
 
     #[test_case(Path::new("lines_after_imports_nothing_after.py"))]
+    #[test_case(Path::new("lines_after_imports.pyi"))]
     #[test_case(Path::new("lines_after_imports_func_after.py"))]
     #[test_case(Path::new("lines_after_imports_class_after.py"))]
     fn lines_after_imports(path: &Path) -> Result<()> {
